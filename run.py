@@ -1,3 +1,11 @@
+# Load environment variables FIRST
+from dotenv import load_dotenv
+import os
+
+# Load .env file before anything else
+load_dotenv()
+
+# Now import app
 from app import create_app, db
 from flask import jsonify
 
@@ -9,7 +17,10 @@ def index():
     return jsonify({
         'message': 'Welcome to AI Fitness Tracker API',
         'version': '1.0.0',
+        'status': 'running',
         'endpoints': {
+            'health': '/health',
+            'docs': '/api/docs',
             'auth': '/api/auth',
             'users': '/api/users',
             'yoga': '/api/yoga',
@@ -17,8 +28,7 @@ def index():
             'diet': '/api/diet',
             'exercise': '/api/exercise',
             'chatbot': '/api/chatbot'
-        },
-        'documentation': '/api/docs'
+        }
     })
 
 @app.route('/api/docs')
@@ -96,7 +106,7 @@ def health_check():
     """Health check endpoint"""
     try:
         # Test database connection
-        db.session.execute('SELECT 1')
+        db.session.execute(db.text('SELECT 1'))
         return jsonify({
             'status': 'healthy',
             'database': 'connected',
@@ -105,6 +115,7 @@ def health_check():
     except Exception as e:
         return jsonify({
             'status': 'unhealthy',
+            'database': 'disconnected',
             'error': str(e)
         }), 500
 
@@ -117,25 +128,35 @@ def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
-    import os
-    
-    # Initialize database
-    with app.app_context():
-        try:
-            db.create_all()
-            print("✅ Database tables created successfully")
-        except Exception as e:
-            print(f"❌ Error creating database tables: {e}")
-    
     # Get configuration
-    debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+    debug_mode = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
     port = int(os.getenv('PORT', 5000))
     host = os.getenv('HOST', '0.0.0.0')
     
-    print(f"🚀 Starting AI Fitness Tracker API")
-    print(f"📍 Host: {host}")
+    print("\n" + "="*70)
+    print("🚀 STARTING AI FITNESS TRACKER API")
+    print("="*70)
+    print(f"🌐 Host: {host}")
     print(f"🔌 Port: {port}")
     print(f"🐛 Debug: {debug_mode}")
     print(f"🌍 Environment: {os.getenv('FLASK_ENV', 'development')}")
+    print("="*70)
+    
+    # Initialize database tables
+    with app.app_context():
+        try:
+            print("\n📦 Creating database tables...")
+            db.create_all()
+            print("✅ Database tables created successfully\n")
+        except Exception as e:
+            print(f"❌ Error creating database tables: {e}\n")
+    
+    print("="*70)
+    print("✅ SERVER READY!")
+    print("="*70)
+    print(f"\n👉 API Base URL: http://localhost:{port}/")
+    print(f"👉 Health Check: http://localhost:{port}/health")
+    print(f"👉 API Docs: http://localhost:{port}/api/docs")
+    print("\n" + "="*70 + "\n")
     
     app.run(debug=debug_mode, host=host, port=port)

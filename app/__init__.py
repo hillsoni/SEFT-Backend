@@ -1,13 +1,18 @@
+# Load environment variables FIRST before anything else
+from dotenv import load_dotenv
+import os
+
+# This must be the FIRST thing - load .env file
+load_dotenv()
+
+# Now import Flask and extensions
 from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
-from dotenv import load_dotenv
-import os
 
-load_dotenv()
-
+# Initialize extensions
 db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
@@ -18,13 +23,23 @@ token_blacklist = set()
 def create_app():
     app = Flask(__name__)
     
+    # Debug: Print environment variables (remove in production)
+    print("\n" + "="*70)
+    print("🔍 CHECKING ENVIRONMENT VARIABLES")
+    print("="*70)
+    db_url = os.getenv('DATABASE_URL')
+    print(f"DATABASE_URL: {db_url if db_url else '❌ NOT SET'}")
+    print(f"JWT_SECRET_KEY: {'✅ SET' if os.getenv('JWT_SECRET_KEY') else '❌ NOT SET'}")
+    print(f"SECRET_KEY: {'✅ SET' if os.getenv('SECRET_KEY') else '❌ NOT SET'}")
+    print("="*70 + "\n")
+    
     # Load config
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
     
-    # Initialize extensions
+    # Initialize extensions with app
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
@@ -65,7 +80,9 @@ def create_app():
             'message': 'Access token is missing'
         }), 401
     
-    # Register blueprints - DIRECTLY IMPORT HERE
+    # Register blueprints
+    print("📝 Registering routes...")
+    
     try:
         from app.routes.auth import bp as auth_bp
         app.register_blueprint(auth_bp)
@@ -74,7 +91,7 @@ def create_app():
         print(f"✗ Error loading auth routes: {e}")
     
     try:
-        from app.routes.user import bp as user_bp
+        from app.routes.user import bp_user as user_bp
         app.register_blueprint(user_bp)
         print("✓ Registered user routes")
     except Exception as e:
@@ -102,7 +119,7 @@ def create_app():
         print(f"✗ Error loading diet routes: {e}")
     
     try:
-        from app.routes.exercise import bp as exercise_bp
+        from app.routes.exercise import bp_exercise as exercise_bp
         app.register_blueprint(exercise_bp)
         print("✓ Registered exercise routes")
     except Exception as e:
@@ -114,5 +131,7 @@ def create_app():
         print("✓ Registered chatbot routes")
     except Exception as e:
         print(f"✗ Error loading chatbot routes: {e}")
+    
+    print("✓ All routes registered\n")
     
     return app
