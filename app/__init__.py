@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
@@ -12,28 +12,27 @@ db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
 
-# Token blacklist (in production, use Redis)
+# Token blacklist storage
 token_blacklist = set()
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object('app.config.Config')
     
-    # Validate configuration
-    try:
-        from app.config import Config
-        Config.validate_config()
-    except ValueError as e:
-        print(f"❌ Configuration Error: {e}")
-        raise
+    # Load config
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
     
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
+    
+    # Configure CORS
     CORS(app, resources={
         r"/api/*": {
-            "origins": ["http://localhost:5173", "http://localhost:3000"],
+            "origins": ["http://localhost:5173", "http://localhost:3000", "http://localhost:5174"],
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"]
         }
@@ -47,7 +46,6 @@ def create_app():
     
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):
-        from flask import jsonify
         return jsonify({
             'error': 'Token has expired',
             'message': 'Please login again'
@@ -55,7 +53,6 @@ def create_app():
     
     @jwt.invalid_token_loader
     def invalid_token_callback(error):
-        from flask import jsonify
         return jsonify({
             'error': 'Invalid token',
             'message': 'Authentication failed'
@@ -63,14 +60,59 @@ def create_app():
     
     @jwt.unauthorized_loader
     def missing_token_callback(error):
-        from flask import jsonify
         return jsonify({
             'error': 'Authorization required',
             'message': 'Access token is missing'
         }), 401
     
-    # Register blueprints
-    from app.routes import register_blueprints
-    register_blueprints(app)
+    # Register blueprints - DIRECTLY IMPORT HERE
+    try:
+        from app.routes.auth import bp as auth_bp
+        app.register_blueprint(auth_bp)
+        print("✓ Registered auth routes")
+    except Exception as e:
+        print(f"✗ Error loading auth routes: {e}")
+    
+    try:
+        from app.routes.user import bp as user_bp
+        app.register_blueprint(user_bp)
+        print("✓ Registered user routes")
+    except Exception as e:
+        print(f"✗ Error loading user routes: {e}")
+    
+    try:
+        from app.routes.yoga import bp as yoga_bp
+        app.register_blueprint(yoga_bp)
+        print("✓ Registered yoga routes")
+    except Exception as e:
+        print(f"✗ Error loading yoga routes: {e}")
+    
+    try:
+        from app.routes.workout import bp as workout_bp
+        app.register_blueprint(workout_bp)
+        print("✓ Registered workout routes")
+    except Exception as e:
+        print(f"✗ Error loading workout routes: {e}")
+    
+    try:
+        from app.routes.diet import bp as diet_bp
+        app.register_blueprint(diet_bp)
+        print("✓ Registered diet routes")
+    except Exception as e:
+        print(f"✗ Error loading diet routes: {e}")
+    
+    try:
+        from app.routes.exercise import bp as exercise_bp
+        app.register_blueprint(exercise_bp)
+        print("✓ Registered exercise routes")
+    except Exception as e:
+        print(f"✗ Error loading exercise routes: {e}")
+    
+    try:
+        from app.routes.chatbot import bp as chatbot_bp
+        app.register_blueprint(chatbot_bp)
+        print("✓ Registered chatbot routes")
+    except Exception as e:
+        print(f"✗ Error loading chatbot routes: {e}")
     
     return app

@@ -5,68 +5,62 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16
-    container_name: fitness-postgres
+    container_name: postgres-tsi
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-fitness_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fitness_password}
-      POSTGRES_DB: ${POSTGRES_DB:-fitness_tracker}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fitness_user} -d ${POSTGRES_DB:-fitness_tracker}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - fitness-network
 
-  # PgAdmin (Database Management)
   pgadmin:
     image: dpage/pgadmin4
-    container_name: fitness-pgadmin
+    container_name: pgadmin-tsi
     ports:
       - "5050:80"
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@fitness.com}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin123}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - fitness-network
+      - postgres
 
-  # Backend API
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: fitness-backend
-    ports:
-      - "5000:5000"
-    environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-fitness_user}:${POSTGRES_PASSWORD:-fitness_password}@postgres:5432/${POSTGRES_DB:-fitness_tracker}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-super-secret-jwt-key-change-this-in-production}
-      - SECRET_KEY=${SECRET_KEY:-your-flask-secret-key-change-this-in-production}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-minio:9000}
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
-      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-fitness-app}
-      - MINIO_SECURE=${MINIO_SECURE:-False}
-      - FLASK_ENV=production
-      - FLASK_DEBUG=False
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - fitness-network
-    volumes:
-      - backend-logs:/app/logs
+  # # Backend API
+  # backend:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: fitness-backend
+  #   ports:
+  #     - "5000:5000"
+  #   environment:
+  #     - DATABASE_URL=postgresql://${POSTGRES_USER:-fitness_user}:${POSTGRES_PASSWORD:-fitness_password}@postgres:5432/${POSTGRES_DB:-fitness_tracker}
+  #     - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-super-secret-jwt-key-change-this-in-production}
+  #     - SECRET_KEY=${SECRET_KEY:-your-flask-secret-key-change-this-in-production}
+  #     - GEMINI_API_KEY=${GEMINI_API_KEY}
+  #     - MINIO_ENDPOINT=${MINIO_ENDPOINT:-minio:9000}
+  #     - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
+  #     - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
+  #     - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-fitness-app}
+  #     - MINIO_SECURE=${MINIO_SECURE:-False}
+  #     - FLASK_ENV=production
+  #     - FLASK_DEBUG=False
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+  #   networks:
+  #     - fitness-network
+  #   volumes:
+  #     - backend-logs:/app/logs
 
   # MinIO (Object Storage)
   minio:
@@ -76,14 +70,13 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     command: server /data --console-address ":9001"
     volumes:
       - minio-data:/data
     restart: unless-stopped
-    networks:
-      - fitness-network
+ 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
@@ -91,29 +84,26 @@ services:
       retries: 3
 
   # Frontend
-  frontend:
-    build:
-      context: ../ai-fitness-app
-      dockerfile: Dockerfile
-    container_name: fitness-frontend
-    ports:
-      - "3000:80"
-    environment:
-      - REACT_APP_API_URL=http://localhost:5000/api
-    depends_on:
-      - backend
-    restart: unless-stopped
-    networks:
-      - fitness-network
+  # frontend:
+  #   build:
+  #     context: ../ai-fitness-app
+  #     dockerfile: Dockerfile
+  #   container_name: fitness-frontend
+  #   ports:
+  #     - "3000:80"
+  #   environment:
+  #     - REACT_APP_API_URL=http://localhost:5000/api
+  #   depends_on:
+  #     - backend
+  #   restart: unless-stopped
+  #   networks:
+  #     - fitness-network
 
-networks:
-  fitness-network:
-    driver: bridge
 
 volumes:
   postgres-data:
     driver: local
   minio-data:
     driver: local
-  backend-logs:
-    driver: local
+  # backend-logs:
+  #   driver: local
