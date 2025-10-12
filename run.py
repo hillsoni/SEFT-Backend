@@ -1,11 +1,8 @@
-# Load environment variables FIRST
 from dotenv import load_dotenv
 import os
 
-# Load .env file before anything else
 load_dotenv()
 
-# Now import app
 from app import create_app, db
 from flask import jsonify
 
@@ -132,7 +129,7 @@ if __name__ == '__main__':
     debug_mode = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
     port = int(os.getenv('PORT', 5000))
     host = os.getenv('HOST', '0.0.0.0')
-    
+
     print("\n" + "="*70)
     print("🚀 STARTING AI FITNESS TRACKER API")
     print("="*70)
@@ -141,7 +138,7 @@ if __name__ == '__main__':
     print(f"🐛 Debug: {debug_mode}")
     print(f"🌍 Environment: {os.getenv('FLASK_ENV', 'development')}")
     print("="*70)
-    
+
     # Initialize database tables
     with app.app_context():
         try:
@@ -150,7 +147,7 @@ if __name__ == '__main__':
             print("✅ Database tables created successfully\n")
         except Exception as e:
             print(f"❌ Error creating database tables: {e}\n")
-    
+
     print("="*70)
     print("✅ SERVER READY!")
     print("="*70)
@@ -158,5 +155,5 @@ if __name__ == '__main__':
     print(f"👉 Health Check: http://localhost:{port}/health")
     print(f"👉 API Docs: http://localhost:{port}/api/docs")
     print("\n" + "="*70 + "\n")
-    
+
     app.run(debug=debug_mode, host=host, port=port)

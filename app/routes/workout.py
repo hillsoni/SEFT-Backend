@@ -1,11 +1,11 @@
-# app/routes/workout.py - Workout CRUD Operations
-
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.workout import Workout
 from app.models.user import User
 from app.services.minio_service import MinioService
+
+from app.utils.decorators import admin_required
 
 bp = Blueprint('workout', __name__, url_prefix='/api/workouts')
 minio = MinioService()
@@ -14,16 +14,6 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def admin_required(fn):
-    @jwt_required()
-    def wrapper(*args, **kwargs):
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
-        if not user or user.role.role_name != 'admin':
-            return jsonify({'error': 'Admin access required'}), 403
-        return fn(*args, **kwargs)
-    return wrapper
 
 
 # ============= CREATE =============
@@ -38,7 +28,7 @@ def create_workout():
             photo = request.files['photo']
             if photo.filename != '' and allowed_file(photo.filename):
                 photo_url = minio.upload_file(photo, folder='workouts')
-        
+
         workout = Workout(
             workout_name=request.form.get('workout_name'),
             workout_description=request.form.get('workout_description'),
@@ -49,10 +39,10 @@ def create_workout():
             equipment_needed=request.form.get('equipment_needed'),
             photo_url=photo_url
         )
-        
+
         db.session.add(workout)
         db.session.commit()
-        
+
         return jsonify({
             'message': 'Workout created successfully',
             'workout': {
@@ -62,7 +52,7 @@ def create_workout():
                 'difficulty_level': workout.difficulty_level
             }
         }), 201
-        
+
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -75,13 +65,13 @@ def get_all_workouts():
     try:
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
-        
+
         category = request.args.get('category')
         difficulty = request.args.get('difficulty')
         search = request.args.get('search')
-        
+
         query = Workout.query
-        
+
         if category:
             query = query.filter_by(category=category)
         if difficulty:
@@ -93,10 +83,10 @@ def get_all_workouts():
                     Workout.workout_description.ilike(f'%{search}%')
                 )
             )
-        
+
         workouts = query.order_by(Workout.workout_name)\
             .paginate(page=page, per_page=per_page, error_out=False)
-        
+
         return jsonify({
             'workouts': [{
                 'id': w.id,
@@ -113,7 +103,7 @@ def get_all_workouts():
             'page': workouts.page,
             'pages': workouts.pages
         }), 200
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -126,7 +116,7 @@ def get_workout(id):
         workout = Workout.query.get(id)
         if not workout:
             return jsonify({'error': 'Workout not found'}), 404
-        
+
         return jsonify({
             'id': workout.id,
             'workout_name': workout.workout_name,
@@ -138,7 +128,7 @@ def get_workout(id):
             'equipment_needed': workout.equipment_needed,
             'photo_url': workout.photo_url
         }), 200
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -152,7 +142,7 @@ def update_workout(id):
         workout = Workout.query.get(id)
         if not workout:
             return jsonify({'error': 'Workout not found'}), 404
-        
+
         if 'photo' in request.files:
             photo = request.files['photo']
             if photo.filename != '' and allowed_file(photo.filename):
@@ -163,21 +153,21 @@ def update_workout(id):
                     except:
                         pass
                 workout.photo_url = minio.upload_file(photo, folder='workouts')
-        
+
         # Update fields
-        for field in ['workout_name', 'workout_description', 'category', 
+        for field in ['workout_name', 'workout_description', 'category',
                       'difficulty_level', 'equipment_needed']:
             if field in request.form:
                 setattr(workout, field, request.form[field])
-        
+
         if 'duration_minutes' in request.form:
             workout.duration_minutes = int(request.form['duration_minutes'])
         if 'calories_burned' in request.form:
             workout.calories_burned = int(request.form['calories_burned'])
-        
+
         db.session.commit()
         return jsonify({'message': 'Workout updated successfully'}), 200
-        
+
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -192,18 +182,18 @@ def delete_workout(id):
         workout = Workout.query.get(id)
         if not workout:
             return jsonify({'error': 'Workout not found'}), 404
-        
+
         if workout.photo_url:
             try:
                 photo_path = workout.photo_url.split('/')[-1]
                 minio.delete_file(f'workouts/{photo_path}')
             except:
                 pass
-        
+
         db.session.delete(workout)
         db.session.commit()
         return jsonify({'message': 'Workout deleted successfully'}), 200
-        
+
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
