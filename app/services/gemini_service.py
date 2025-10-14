@@ -4,7 +4,10 @@ import os
 class GeminiService:
     def __init__(self):
         genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
-        self.model = genai.GenerativeModel('gemini-pro')
+        for model in genai.list_models():
+            if 'generateContent' in model.supported_generation_methods:
+                print(model.name)
+        self.model = genai.GenerativeModel('models/gemini-2.0-flash')
     
     def generate_diet_plan(self, user_data):
         """Generate personalized diet plan using Gemini"""
