@@ -114,8 +114,8 @@ Before you begin, ensure you have the following installed:
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/fitness-tracker-backend.git
-cd fitness-tracker-backend
+git clone [https://github.com/yourusername/fitness-tracker-backend.git](https://github.com/hillsoni/SEFT-Backend.git)
+cd SEFT-Backend
 ```
 
 ### Step 2: Create Virtual Environment
@@ -1043,7 +1043,7 @@ This project is licensed under the MIT License.
 
 ---
 
-**Built with ❤️ by [Your Name]**
+**Built with ❤️**
 
 **Last Updated:** January 2025
 
