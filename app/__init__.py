@@ -33,8 +33,25 @@ def create_app():
     # Load config
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+
+    # JWT Configuration - Ensure secret key is set
+    jwt_secret_key = os.getenv('JWT_SECRET_KEY')
+    if not jwt_secret_key:
+        raise ValueError("JWT_SECRET_KEY environment variable is required")
+    app.config['JWT_SECRET_KEY'] = jwt_secret_key
+    app.config['JWT_ALGORITHM'] = 'HS256'  # Explicitly set algorithm
+
+    # Token location - explicitly set where to look for tokens
+    from datetime import timedelta
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
+    app.config['JWT_TOKEN_LOCATION'] = ['headers']  # Look for token in Authorization header
+    app.config['JWT_HEADER_NAME'] = 'Authorization'
+    app.config['JWT_HEADER_TYPE'] = 'Bearer'  # Token format: "Bearer <token>"
+
+    secret_key = os.getenv('SECRET_KEY')
+    if not secret_key:
+        raise ValueError("SECRET_KEY environment variable is required")
+    app.config['SECRET_KEY'] = secret_key
 
     # Initialize extensions with app
     db.init_app(app)
@@ -65,9 +82,12 @@ def create_app():
 
     @jwt.invalid_token_loader
     def invalid_token_callback(error):
+        """Handle invalid token errors with detailed message"""
+        error_message = str(error) if error else 'Invalid token'
         return jsonify({
             'error': 'Invalid token',
-            'message': 'Authentication failed'
+            'message': 'Authentication failed',
+            'details': error_message
         }), 401
 
     @jwt.unauthorized_loader

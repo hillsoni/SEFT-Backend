@@ -47,7 +47,7 @@ def get_user(id):
     """Get user by ID"""
     try:
         current_user_id = get_jwt_identity()
-        current_user = User.query.get(current_user_id)
+        current_user = User.query.get(int(current_user_id))
 
         # Users can only view their own profile, admins can view anyone
         if current_user_id != id and current_user.role.role_name != 'admin':
