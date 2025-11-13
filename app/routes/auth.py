@@ -149,6 +149,8 @@ def get_profile():
             'username': user.username,
             'email': user.email,
             'mobile_number': user.mobile_number,
+            'height': user.height,
+            'weight': user.weight,
             'role': user.role.role_name,
             'created_at': user.created_at.isoformat()
         }), 200
@@ -182,6 +184,12 @@ def update_profile():
         if 'mobile_number' in data:
             user.mobile_number = data['mobile_number']
 
+        if 'height' in data:
+            user.height = float(data['height']) if data['height'] else None
+
+        if 'weight' in data:
+            user.weight = float(data['weight']) if data['weight'] else None
+
         if 'password' in data:
             user.set_password(data['password'])
 
@@ -193,7 +201,9 @@ def update_profile():
                 'id': user.id,
                 'username': user.username,
                 'email': user.email,
-                'mobile_number': user.mobile_number
+                'mobile_number': user.mobile_number,
+                'height': user.height,
+                'weight': user.weight
             }
         }), 200
 

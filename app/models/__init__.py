@@ -5,6 +5,7 @@ from app.models.workout import Workout
 from app.models.diet_plan import DietPlan
 from app.models.exercise_plan import ExercisePlan
 from app.models.chatbot_query import ChatbotQuery
+from app.models.challenge import Challenge, UserChallenge, ChallengeProgress
 
 __all__ = [
     'Role',
@@ -13,5 +14,8 @@ __all__ = [
     'Workout',
     'DietPlan',
     'ExercisePlan',
-    'ChatbotQuery'
+    'ChatbotQuery',
+    'Challenge',
+    'UserChallenge',
+    'ChallengeProgress'
 ]

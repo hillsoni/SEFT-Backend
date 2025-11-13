@@ -149,6 +149,13 @@ def create_app():
     except Exception as e:
         print(f"✗ Error loading chatbot routes: {e}")
 
+    try:
+        from app.routes.challenge import bp as challenge_bp
+        app.register_blueprint(challenge_bp)
+        print("✓ Registered challenge routes")
+    except Exception as e:
+        print(f"✗ Error loading challenge routes: {e}")
+
     print("✓ All routes registered\n")
 
     return app
