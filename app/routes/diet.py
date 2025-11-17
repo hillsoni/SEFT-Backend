@@ -209,7 +209,25 @@ def get_latest_diet_plan():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
+@bp.route('/latest', methods=['GET'])
+@jwt_required()
+def get_latest_diet():
+    user_id = get_jwt_identity()
+    latest_diet = DietPlan.query.filter_by(user_id=user_id)\
+        .order_by(DietPlan.created_at.desc()).first()
+    
+    if not latest_diet:
+        return jsonify({'diet_plan': None}), 200
+    
+    return jsonify({
+        'diet_plan': {
+            'id': latest_diet.id,
+            'goal': latest_diet.goal,
+            'diet_type': latest_diet.diet_type,
+            'duration': latest_diet.duration,
+            'created_at': latest_diet.created_at.isoformat()
+        }
+    }), 200
 @bp.route('/statistics', methods=['GET'])
 @jwt_required()
 def get_diet_statistics():

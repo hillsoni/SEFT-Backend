@@ -56,6 +56,10 @@ def register():
             username=data['username'],
             email=email,
             mobile_number=data.get('mobile_number'),
+            height=data.get('height'),  # ✅ ADD
+            weight=data.get('weight'),  # ✅ ADD
+            age=data.get('age'),        # ✅ ADD (optional)
+            gender=data.get('gender'),   # ✅ ADD (optional)
             role_id=default_role.id
         )
         user.set_password(data['password'])
@@ -67,15 +71,19 @@ def register():
         access_token = create_access_token(identity=str(user.id))
 
         return jsonify({
-            'message': 'User registered successfully',
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'role': user.role.role_name
-            },
-            'access_token': access_token
-        }), 201
+        'message': 'Registration successful',
+        'access_token': access_token,
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'mobile_number': user.mobile_number,
+            'height': user.height,    # ✅ INCLUDE
+            'weight': user.weight,    # ✅ INCLUDE
+            'age': user.age,          # ✅ INCLUDE
+            'gender': user.gender     # ✅ INCLUDE
+        }
+    }), 201
 
     except Exception as e:
         db.session.rollback()
